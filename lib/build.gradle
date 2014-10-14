@@ -36,7 +36,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google:volley:+'
-    compile 'net.adorem.user:client:0.0.1'
+    compile 'jp.fkmsoft.libs:SyncTask:1.0.0'
+    compile 'jp.fkmsoft.libs:KiiLib-Android-Volley:2.1.+'
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
