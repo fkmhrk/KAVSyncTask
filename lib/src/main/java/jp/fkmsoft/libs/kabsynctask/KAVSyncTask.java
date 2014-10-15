@@ -46,9 +46,9 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
         final KiiBucket bucket = getBucket();
         KiiClause clause = getFetchClause();
         if (clause != null) {
-            clause = KiiClause.and(clause, KiiClause.greaterThan(FIELD_MODIFIED, getLatestServerTime(), false));
+            clause = KiiClause.and(clause, KiiClause.greaterThan(FIELD_MODIFIED, getBiggestServerTime(), false));
         } else {
-            clause = KiiClause.greaterThan(FIELD_MODIFIED, getLatestServerTime(), false);
+            clause = KiiClause.greaterThan(FIELD_MODIFIED, getBiggestServerTime(), false);
         }
         final QueryParams params = new QueryParams(clause);
         params.sortByAsc(FIELD_MODIFIED);
@@ -177,8 +177,8 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
      * @throws SQLiteException is thrown when update operation is failed.
      */
     private boolean updateDownloadedEntity(ENTITY entity, long lastLocalSyncTime) throws SQLiteException {
-        String[] args = { getId(entity) };
-        int count = mDB.update(getTableName(), toContentValues(entity, lastLocalSyncTime), getIdWhereClause(), args);
+        String[] args = { getServerId(entity) };
+        int count = mDB.update(getTableName(), toContentValues(entity, lastLocalSyncTime), getServerIdWhereClause(), args);
         return count == 1;
     }
 
@@ -259,10 +259,22 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
     protected abstract KiiClause getFetchClause();
 
     /**
+     * Gets the where clause for update. server id column must be string.
+     * @return Where clause like "server_id=?". Only 1 '?' must be included.
+     */
+    protected abstract String getServerIdWhereClause();
+
+    /**
+     * Gets the where clause for update. local id column must be string.
+     * @return Where clause like "_id=?". Only 1 '?' must be included.
+     */
+    protected abstract String getLocalIdWhereClause();
+
+    /**
      * Gets the biggest modified time of server(max(_modified))
      * @return The biggest modified time
      */
-    protected abstract long getLatestServerTime();
+    protected abstract long getBiggestServerTime();
 
     /**
      * Gets the key name for {@link android.content.SharedPreferences}
@@ -271,24 +283,23 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
     protected abstract String getPrefKey();
 
     /**
-     * Converts {@link jp.fkmsoft.libs.kiilib.entities.KiiObject} to ENTITY
-     * @param obj The fetched object
-     * @return Converted ENTITY
-     */
-    protected abstract ENTITY toEntity(KiiObject obj);
-
-    /**
      * Gets the name of table
      * @return The name of table
      */
     protected abstract String getTableName();
 
     /**
+     * Gets the name of "modified" column. This method will be called when library will get modified objects.
+     * @return The name of "modified" column.
+     */
+    protected abstract String getModifiedColumnName();
+
+    /**
      * Gets the ID of this entity
      * @param entity The entity.
      * @return The ID of entity.
      */
-    protected abstract String getId(ENTITY entity);
+    protected abstract String getServerId(ENTITY entity);
 
     /**
      * Gets the ID of local database
@@ -296,6 +307,13 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
      * @return The local ID of entity.
      */
     protected abstract String getLocalId(ENTITY entity);
+
+    /**
+     * Determines whether this entity has server ID.
+     * @param entity The entity.
+     * @return true if this entity has server ID.
+     */
+    protected abstract boolean hasServerId(ENTITY entity);
 
     /**
      * Converts entity to {@link android.content.ContentValues} for insert / update
@@ -306,18 +324,6 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
     protected abstract ContentValues toContentValues(ENTITY entity, long lastLocalSyncTime);
 
     /**
-     * Gets the where clause for update. server id column must be string.
-     * @return Where clause like "server_id=?". Only 1 '?' must be included.
-     */
-    protected abstract String getIdWhereClause();
-
-    /**
-     * Gets the name of "modified" column. This method will be called when library will get modified objects.
-     * @return The name of "modified" column.
-     */
-    protected abstract String getModifiedColumnName();
-
-    /**
      * Converts cursor to ENTITY list. DO NOT close cursor after conversion.
      * @param cursor The cursor.
      * @return The list of ENTITY.
@@ -325,11 +331,11 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
     protected abstract List<ENTITY> toEntityList(Cursor cursor);
 
     /**
-     * Determines whether this entity has server ID.
-     * @param entity The entity.
-     * @return true if this entity has server ID.
+     * Converts {@link jp.fkmsoft.libs.kiilib.entities.KiiObject} to ENTITY
+     * @param obj The fetched object
+     * @return Converted ENTITY
      */
-    protected abstract boolean hasServerId(ENTITY entity);
+    protected abstract ENTITY toEntity(KiiObject obj);
 
     /**
      * Converts ENTITY to {@link jp.fkmsoft.libs.kiilib.entities.KiiObject}.
@@ -347,10 +353,4 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
      * @param modifiedTime The modified time of server object.
      */
     protected abstract void setServerIdAndModifiedTime(ENTITY entity, String id, long modifiedTime);
-
-    /**
-     * Gets the where clause for update. local id column must be string.
-     * @return Where clause like "_id=?". Only 1 '?' must be included.
-     */
-    protected abstract String getLocalIdWhereClause();
 }
