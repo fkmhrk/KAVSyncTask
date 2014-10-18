@@ -142,8 +142,13 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
     @Override
     protected void putModifiedObject(ENTITY entity) {
         String[] args = {getLocalId(entity)};
-        mDB.update(getTableName(), toContentValues(entity, mCurrentTime), getLocalIdWhereClause(), args);
-        donePutModifiedObject(entity);
+        try {
+            mDB.update(getTableName(), toContentValues(entity, mCurrentTime), getLocalIdWhereClause(), args);
+            donePutModifiedObject(entity);
+        } catch (SQLiteException e) {
+            failedUpload(e);
+        }
+
     }
 
     @Override
