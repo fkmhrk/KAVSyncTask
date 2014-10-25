@@ -176,12 +176,13 @@ abstract public class KAVSyncTask<ENTITY> extends SyncTask<ENTITY> {
 
     /**
      * Tries to update downloaded entity.
+     * If you want to implement merge feature, override this method.
      * @param entity The entity to be updated.
      * @param lastLocalSyncTime The biggest modified time of local modification.
      * @return true if update is succeeded.
      * @throws SQLiteException is thrown when update operation is failed.
      */
-    private boolean updateDownloadedEntity(ENTITY entity, long lastLocalSyncTime) throws SQLiteException {
+    protected boolean updateDownloadedEntity(ENTITY entity, long lastLocalSyncTime) throws SQLiteException {
         String[] args = { getServerId(entity) };
         int count = mDB.update(getTableName(), toContentValues(entity, lastLocalSyncTime), getServerIdWhereClause(), args);
         return count == 1;
